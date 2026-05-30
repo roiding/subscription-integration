@@ -1,0 +1,27 @@
+{
+  "name": "v2ray-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "cf:bootstrap": "node scripts/bootstrap-cloudflare.mjs",
+    "db:migrate:local": "wrangler d1 migrations apply v2ray_subscription_db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply v2ray_subscription_db --remote",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm test",
+    "hash-token": "node scripts/hash-token.mjs",
+    "token:hash": "node scripts/hash-token.mjs"
+  },
+  "dependencies": {
+    "yaml": "^2.8.2"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260529.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4",
+    "wrangler": "^4.50.0"
+  }
+}

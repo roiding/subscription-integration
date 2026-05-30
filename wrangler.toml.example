@@ -1,0 +1,13 @@
+name = "your-worker-name"
+main = "src/index.ts"
+compatibility_date = "2024-12-18"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "your-d1-database-name"
+database_id = "replace-with-your-d1-database-id"
+migrations_dir = "migrations"
+
+[vars]
+# Optional fallback vars. Prefer using bootstrap script plus D1-backed token records.
+# UPSTREAM_RULESET_URL = "https://example.com/clash-rules.yaml"
