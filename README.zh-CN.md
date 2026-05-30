@@ -102,8 +102,57 @@
 
 - `clash` 是推荐使用的、基于 provider 的 Mihomo 配置
 - `clash-inline` 是展开后的兜底配置
+- `Proxy` 是系统自动生成的默认代理策略组；没有显式目标组的规则也会默认回退到 `Proxy`
+- 当规则引用了上游配置里不存在的策略组名时，`clash` 和 `clash-inline` 都会自动补一个候选为 `Proxy`、`DIRECT`、`REJECT` 的兜底 `select` 组
 - `uri-list` 和 `base64` 会包含个人节点，以及支持 URI 的第三方订阅源内容
 - 第三方 `clash-yaml` 订阅源会向 Clash 输出贡献代理节点，但除非订阅源本身提供 URI，否则不会进入原始 URI 输出
+
+常见写法建议：
+
+- 日常默认走代理：`DOMAIN-SUFFIX,example.com,Proxy`
+- 想给一类流量单独一个开关组：`DOMAIN-SUFFIX,openai.com,AI`
+- 想给工作流量单独控制：`DOMAIN-SUFFIX,company.com,Work`
+- 想强制直连：`DOMAIN-SUFFIX,lan.example,DIRECT`
+- 想强制拒绝：`DOMAIN-SUFFIX,ads.example,REJECT`
+
+如果你写了 `AI`、`Work`、`Streaming` 这类上游里没有的组名，系统会自动补一个对应的 `select` 组，默认候选是：
+
+```yaml
+- name: AI
+  type: select
+  proxies:
+    - Proxy
+    - DIRECT
+    - REJECT
+```
+
+这意味着它默认还是会先回退到 `Proxy`，只是你后续可以在客户端里把它手动切成 `DIRECT` 或别的策略。
+
+## 校验与测试
+
+常用命令：
+
+- `npm run typecheck`
+- `npm test`
+- `npm run check`
+
+它们分别表示：
+
+- `typecheck`：运行 TypeScript 编译器做静态类型检查，不会启动 Worker，也不会真的访问 Cloudflare
+- `test`：运行 Vitest，执行 `tests/**/*.test.ts` 里的测试用例
+- `check`：先跑类型检查，再跑测试，适合作为提交前自检
+
+这个仓库当前的测试主要是“接口级单元测试”：
+
+- 直接调用 `handleRequest()`，不需要真的部署 Worker
+- 用内存版仓库 `InMemoryRepository` 代替 D1
+- 用假的 `fetchFn` 代替真实上游订阅请求
+- 最后断言返回的状态码、JSON 和 YAML 文本是否符合预期
+
+如果你不常写测试，可以先把它理解成：
+
+- `typecheck` 负责抓“代码之间接线接错了没有”
+- `test` 负责抓“业务行为是不是还是我们想要的”
 
 ## 部署
 

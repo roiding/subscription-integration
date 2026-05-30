@@ -102,8 +102,57 @@ Notes:
 
 - `clash` is the preferred provider-backed Mihomo config
 - `clash-inline` is the fallback expanded config
+- `Proxy` is the auto-generated default select group. Rules without an explicit target also fall back to `Proxy`.
+- When a rule targets a group name that does not exist in the upstream config, both `clash` and `clash-inline` create a fallback select group with `Proxy`, `DIRECT`, and `REJECT` as choices.
 - `uri-list` and `base64` include personal nodes and URI-compatible third-party sources
 - third-party `clash-yaml` sources contribute Clash proxies to Clash outputs, but not to raw URI outputs unless the source itself exposes URIs
+
+Common rule patterns:
+
+- Default proxy path: `DOMAIN-SUFFIX,example.com,Proxy`
+- Separate AI traffic toggle: `DOMAIN-SUFFIX,openai.com,AI`
+- Separate work traffic toggle: `DOMAIN-SUFFIX,company.com,Work`
+- Force direct: `DOMAIN-SUFFIX,lan.example,DIRECT`
+- Force reject: `DOMAIN-SUFFIX,ads.example,REJECT`
+
+If you reference a group such as `AI`, `Work`, or `Streaming` that does not exist upstream, the service creates a fallback select group like:
+
+```yaml
+- name: AI
+  type: select
+  proxies:
+    - Proxy
+    - DIRECT
+    - REJECT
+```
+
+That means the new group still falls back to `Proxy` by default, while letting you override it in the client later.
+
+## Validation And Tests
+
+Common commands:
+
+- `npm run typecheck`
+- `npm test`
+- `npm run check`
+
+What they do:
+
+- `typecheck`: runs the TypeScript compiler for static analysis only; it does not start the Worker or call Cloudflare
+- `test`: runs Vitest against `tests/**/*.test.ts`
+- `check`: runs typecheck first, then the test suite
+
+The current test style in this repo is mostly request-level unit testing:
+
+- call `handleRequest()` directly without deploying the Worker
+- use `InMemoryRepository` instead of D1
+- stub upstream fetches with a fake `fetchFn`
+- assert on status codes and returned JSON/YAML payloads
+
+If you have not written tests in a while, a good mental model is:
+
+- `typecheck` catches wiring mistakes between code paths
+- `test` catches behavior regressions
 
 ## Deployment
 

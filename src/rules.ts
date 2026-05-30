@@ -90,11 +90,15 @@ export function mergeClashFragments(
     upstream.ruleProviders,
     ...personalFragments.map((fragment) => fragment.ruleProviders)
   );
+  const ruleTargets = collectRuleTargets(mergedRules);
 
   const config: ClashConfig = {
     ...base,
     proxies: mergedProxies,
-    "proxy-groups": ensureDefaultGroups(mergedGroups, mergedProxies.map((proxy) => proxy.name)),
+    "proxy-groups": ensureDefaultGroups(
+      ensureGroupsForTargets(mergedGroups, ruleTargets),
+      mergedProxies.map((proxy) => proxy.name)
+    ),
     rules: mergedRules.length > 0 ? mergedRules : [`MATCH,${mergedProxies.length > 0 ? "Proxy" : "DIRECT"}`],
     "rule-providers": Object.keys(mergedProviders).length > 0 ? mergedProviders : undefined
   };
@@ -316,6 +320,14 @@ function splitRuleTarget(rule: string):
   return splitRuleTargetWithDefault(rule, "Proxy");
 }
 
+function collectRuleTargets(rules: string[]): string[] {
+  return unique(
+    rules
+      .map((rule) => splitRuleTarget(rule)?.target)
+      .filter((target): target is string => Boolean(target))
+  );
+}
+
 function splitRuleTargetWithDefault(
   rule: string,
   defaultTarget: string
@@ -409,7 +421,7 @@ function ensureGroupsForTargets(
   const existingNames = new Set(output.map((group) => group.name));
 
   for (const target of targets) {
-    if (!target || target === "DIRECT" || target === "REJECT" || existingNames.has(target)) {
+    if (!target || isBuiltInTargetGroup(target) || existingNames.has(target)) {
       continue;
     }
     output.push({
@@ -421,6 +433,10 @@ function ensureGroupsForTargets(
   }
 
   return output;
+}
+
+function isBuiltInTargetGroup(target: string): boolean {
+  return target === "DIRECT" || target === "REJECT" || target === "Proxy" || target === "Auto";
 }
 
 function slugify(value: string): string {

@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { parse } from "yaml";
 import { sha256Hex } from "../src/auth";
 import { handleRequest } from "../src/index";
 import type { TokenRecord } from "../src/types";
 import { InMemoryRepository } from "./helpers";
 
-describe("v2ray-worker", () => {
+describe("subscription-integration", () => {
   let repository: InMemoryRepository;
   let proxyAdminToken: string;
   let rulesAdminToken: string;
@@ -232,6 +233,31 @@ describe("v2ray-worker", () => {
     expect(body).toContain("mixed-port: 7891");
   });
 
+  it("avoids creating a self-referencing Proxy group when rules target Proxy", async () => {
+    await repository.createProxyProfile({
+      name: "SS-US",
+      uri: "ss://YWVzLTI1Ni1nY206cGFzc3dvcmQ=@1.2.3.4:8388#SS-US",
+      enabled: true
+    });
+
+    const response = await send(
+      new Request(
+        `https://worker.test/api/subscription/clash?token=${subscriptionToken}&upstream=${encodeURIComponent("https://rules.example/config.yaml")}`
+      ),
+      {
+        fetchFn: async () => new Response("rules:\n  - DOMAIN-SUFFIX,example.com,Proxy\n")
+      }
+    );
+
+    expect(response.status).toBe(200);
+    const body = await response.text();
+    const config = parse(body) as { "proxy-groups"?: Array<{ name?: string; proxies?: string[] }> };
+    const proxyGroup = config["proxy-groups"]?.find((group) => group.name === "Proxy");
+
+    expect(proxyGroup).toBeTruthy();
+    expect(proxyGroup?.proxies).not.toContain("Proxy");
+  });
+
   it("returns provider payloads for personal rule sets", async () => {
     const ruleSet = await repository.createPersonalRuleSet({
       name: "Video",
@@ -277,6 +303,31 @@ describe("v2ray-worker", () => {
     expect(response.status).toBe(200);
     const body = await response.text();
     expect(body).toContain("DOMAIN-SUFFIX,example-video.com,Proxy");
+  });
+
+  it("creates fallback target groups for clash-inline when custom rules reference missing groups", async () => {
+    await repository.createProxyProfile({
+      name: "SS-US",
+      uri: "ss://YWVzLTI1Ni1nY206cGFzc3dvcmQ=@1.2.3.4:8388#SS-US",
+      enabled: true
+    });
+
+    const response = await send(
+      new Request(
+        `https://worker.test/api/subscription/clash-inline?token=${subscriptionToken}&upstream=${encodeURIComponent("https://rules.example/config.yaml")}`
+      ),
+      {
+        fetchFn: async () => new Response("rules:\n  - DOMAIN-SUFFIX,example.com,Work\n")
+      }
+    );
+
+    expect(response.status).toBe(200);
+    const body = await response.text();
+    const config = parse(body) as { "proxy-groups"?: Array<{ name?: string; proxies?: string[] }> };
+    const workGroup = config["proxy-groups"]?.find((group) => group.name === "Work");
+
+    expect(workGroup).toBeTruthy();
+    expect(workGroup?.proxies).toEqual(["Proxy", "DIRECT", "REJECT"]);
   });
 
   it("returns base64 shadowsocks-only subscriptions", async () => {
