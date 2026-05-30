@@ -244,6 +244,10 @@ Recommended production split:
 - one admin token with write scopes
 - one subscription token with `subscriptions:read`
 
+## Friendly Links
+
+- [Linux.do](https://linux.do/) - Chinese open-source and tech community
+
 ## Verification
 
 Run:
