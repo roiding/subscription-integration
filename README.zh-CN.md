@@ -244,6 +244,10 @@ npm run check
 - 一个具备写权限的管理 Token
 - 一个仅带 `subscriptions:read` 的订阅 Token
 
+## 友情链接
+
+- [Linux.do](https://linux.do/) - 中文开源与技术社区
+
 ## 验证
 
 执行：
