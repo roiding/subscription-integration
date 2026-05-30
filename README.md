@@ -1,5 +1,7 @@
 # subscription-integration
 
+[中文文档](./README.zh-CN.md)
+
 Cloudflare Workers subscription service for aggregating:
 
 - one upstream open-source ruleset
