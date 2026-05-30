@@ -65,7 +65,7 @@ export async function handleRequest(request: Request, context: AppContext): Prom
 
     if (pathname === "" || pathname === "/") {
       return jsonResponse({
-        service: "v2ray-worker",
+        service: "subscription-integration",
         endpoints: {
           adminConsole: "/admin",
           health: "/health",

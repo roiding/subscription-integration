@@ -738,7 +738,7 @@ html[data-theme="dark"] .mode-switch button.is-active {
 
 const adminScript = String.raw`
 (() => {
-  const storageKey = 'v2ray-worker-admin-console-v3';
+  const storageKey = 'subscription-integration-admin-console-v3';
   const translations = {
     zh: {
       documentTitle: 'Subscription Atelier',
